@@ -1,0 +1,35 @@
+<?php
+
+function micrositios_install() {
+
+}
+
+function micrositios_update() {
+
+}
+
+function micrositios_schema() {
+	$schema["panels_sections"] = array(
+		'fields' => array(
+			'nid' => array(
+				'description' => 'The current {node}.vid version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+			),
+			'data' => array(
+        'description' => 'A collection of data to cache.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+		),
+		'indexes' => array(
+			'nid' => array("nid")
+		),
+		'primary key' => array("nid")
+	);
+
+	return $schema;
+}

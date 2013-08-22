@@ -1,0 +1,6 @@
+name = Micrositios
+core = 7.x
+dependencies[] = panels
+
+files[] = micrositios.module
+plugins[panels][layouts] = layouts

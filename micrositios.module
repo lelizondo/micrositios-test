@@ -1,0 +1,310 @@
+<?php
+
+function micrositios_javascript_templates_add() {
+	return array(
+		"simpleDiv" => _micrositios_templates_simplediv()
+	);
+}
+
+function _micrositios_templates_simplediv() {
+	$path = drupal_get_path("module", "micrositios") . "/templates/";
+	return file_get_contents($path . "simplediv.tpl.html");
+}
+
+function testjs($data) {
+	return drupal_json(array("data" => $data, "that" => "That"));
+}
+
+/**
+ * Implements hook_menu()
+ */
+function micrositios_menu() {
+
+	// @todo move to custom file
+	
+	$items["node/add/panel/custom/micrositios_sections"] = array(
+		'title' => 'Select sections',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array("micrositios_choose_sections"),
+		'access callback' => TRUE,
+		'access arguments' => array(1),
+		'type' => MENU_CALLBACK
+	);
+
+	$items["testjs"] = array(
+		"page callback" => "testjs",
+		"access callback" => TRUE,
+		'type' => MENU_CALLBACK
+	);
+
+	$items["node/add/panel/custom/micrositios_columns"] = array(
+		'title' => 'Select columns',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array("micrositios_choose_columns"),
+		'access callback' => TRUE,
+		'access arguments' => array(1),
+		'type' => MENU_CALLBACK
+	);
+
+	$items["node/%node/edit/panel-header"] = array(
+		'title' => 'Header',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array("micrositios_panel_header"),
+		'access callback' => TRUE,
+		'access arguments' => array(1),
+		'type' => MENU_LOCAL_TASK,
+		'file' => "includes/panel_header.form.inc"
+	);
+
+	return $items;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory()
+ */
+function micrositios_ctools_plugin_directory($owner, $plugin_type) {
+	if($owner == "panels" && $plugin_type == "layouts") {
+		return "plugins/$plugin_type";
+	}
+}
+
+/**
+ * Implements hook_form_alter()
+ */
+function micrositios_form_alter(&$form, &$form_state, $form_id) {
+	if($form_id == "panel_node_form" && isset($form["#node"]) && $form["#node"]->type == "panel") {
+		if(arg(3) == "custom" && arg(4) !== "micrositios_columns") {
+			$layout = $form["panels_node"]["layout"]["#value"];
+			$node = $form["#node"];
+			
+			// If the user hasn't chosen how many sections, we redirect
+			if(empty($_SESSION['micrositios']) || !is_array($_SESSION['micrositios'])) {
+				drupal_goto("node/add/panel/custom/micrositios_sections");
+			}
+		}
+	}
+}
+
+
+/**
+ * Implements hook_node_insert()
+ */
+function micrositios_node_insert($node) {
+	$sections = $_SESSION["micrositios"];
+	db_insert("panels_sections")
+		->fields(array(
+			'nid' => $node->nid,
+			'data' => serialize($sections)
+		))
+		->execute();
+
+	unset($_SESSION["micrositios"]);
+}
+
+
+/**
+ * Implements hook_node_load()
+ */
+function micrositios_node_load($nodes, $types) {
+	foreach($nodes as $node) {
+		$nids[] = $node->nid;
+	}
+
+	$result = db_select("panels_sections", "s")
+		->fields("s")
+		->where("s.nid IN (:nids)", array(":nids" => $nids))
+		->execute();
+
+	foreach($result as $record) {
+		$nodes[$record->nid]->panels_node["micrositios"] = unserialize($record->data);
+	}
+}
+
+
+/**
+ * Form to choose how many sections must be defined
+ */
+function micrositios_choose_sections($form, &$form_state) {
+	drupal_add_js(drupal_get_path("module", "micrositios") . "/panels_sections.js");
+	$options = array();
+	for ($i = 1; $i <= 10; $i++) {
+		$options[$i] = $i;
+	}
+
+	$form["sections"] = array(
+		'#type' => 'select',
+		'#title' => t("How many sections?"),
+		'#required' => TRUE,
+		'#description' => t("Select how many sections you want to create"),
+		"#options" => $options
+	);
+
+	$form["submit"] = array(
+		"#type" => 'submit',
+		"#value" => t("Next")
+	);
+
+	return $form;
+}
+
+function micrositios_choose_sections_submit($form, &$form_state) {
+	$values = $form_state["values"];
+	$_SESSION['micrositios'] = array("sections" => check_plain($values["sections"]));
+	$form_state["redirect"] = "node/add/panel/custom/micrositios_columns";
+}
+
+/**
+ * Choose columns, it needs to know how many sections 
+ */
+function micrositios_choose_columns($form, &$form_state) {
+
+	// If no sections defined in the session, redirect
+	if(empty($_SESSION["micrositios"]["sections"])) {
+		drupal_goto("node/add/panel/custom/micrositios_sections");
+	}
+
+	// A simple variable
+	$sections = $_SESSION["micrositios"]["sections"];
+	if($sections) {
+		$form["sections"] = array("#type" => "hidden", "#value" => $sections);
+		
+		// Crear una lista de 3 columnas máximo
+		$cols = array();
+		for($c=1; $c <= 3; $c++) {
+			$cols[$c] = $c;
+		}
+
+		// Cuantas secciones vamos a crear
+		for($i=1; $i <= $sections; $i++) {
+			$form["container-" . $i] = array(
+				"#type" => "fieldset",
+				'#title' => "Columns for section " . $i,
+			);
+
+			$form["container-" . $i]["section-title-" . $i] = array(
+				'#type' => 'textfield',
+				'#title' => t("Section title"),
+				'#required' => TRUE,
+				"#description" => t("Used to set the menu title")
+			);
+
+			$form["container-" . $i]["section-background-color-" . $i] = array(
+				'#type' => 'textfield',
+				'#title' => t("Section background color"),
+				'#required' => FALSE,
+				"#description" => t("Don't add the #")
+			);			
+
+			$form["container-" . $i]["section-cols-" . $i] = array(
+				'#type' => 'select',
+				'#title' => t("How many columns you need in this section?"),
+				'#required' => TRUE,
+				'#description' => t("Select how many columns you need for this section"),
+				'#options' => $cols
+			);
+		}
+
+		$form["submit"] = array(
+			"#type" => "submit",
+			"#value" => t("Next")
+		);
+	}
+
+	return $form;
+}
+
+function micrositios_choose_columns_submit(&$form, &$form_state) {
+
+	$values = $form_state["values"];
+	$sections = $values["sections"];
+
+	$ret = array();
+
+	$ret["total"] = $sections;
+	$ret["sections"] = array();
+	for($i = 1; $i <= $sections; $i++) {
+		$ret["sections"][$i] = array(
+			'cols' => $values["section-cols-" . $i],
+			'title' => $values["section-title-" . $i],
+			'backgroundColor' => $values["section-background-color-" . $i]
+		);
+	}
+
+	$_SESSION["micrositios"] = $ret;
+	
+	// clear the session finally
+	$form_state["redirect"] = "node/add/panel/custom";
+}
+
+
+
+/**
+ * Implements hook_block_info()
+ */
+function micrositios_block_info() {
+	$blocks["panel-menu"] = array(
+		'info' => t("Panel Menu"),
+		'cache' => DRUPAL_CACHE_PER_PAGE
+	);
+
+	return $blocks;
+}
+
+/**
+ * Implements hook_block_view()
+ */
+function micrositios_block_view($delta = "") {
+	$block = array();
+
+	switch($delta) {
+		case "panel-menu":
+			$node = menu_get_object("node");
+			if(isset($node)) {
+				$block["subject"] = NULL;
+				$block["content"] = array(
+					"#theme" => "micrositios_panel_menu",
+					"#node" => $node,
+				);
+			}
+		break;
+	}
+
+	return $block;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function micrositios_theme() {
+	return array(
+		"micrositios_panel_menu" => array(
+			'variables' => array(
+				"micrositios" => NULL
+			)
+		)
+	);
+}
+
+
+/**
+ * Displays the menu
+ */
+function theme_micrositios_panel_menu($variables) {
+	global $base_url;
+	$url = request_path();
+
+	$node = $variables["node"];
+	$micrositios = $node->panel_node["micrositios"];
+
+	$titles = array();
+	foreach($node->panels_node["micrositios"]["sections"] as $key => $section) {
+		$titles[] = array(
+			"title" => $section["title"],
+			"href" => $url,
+			"fragment" => "container-outter-section-" . $key
+		);
+	}
+
+	// @todo This is temporary
+	return theme("links", array("links" => $titles, "attributes" => array("class" => "nav nav-pills")));
+}
