@@ -1,17 +1,19 @@
 <?php
 
 function panels_onepage_customize_step_two($form, &$form_state, $node) {
-
 	global $user;
 	$bin = "user:" . $user->uid . ":node:" . $node->nid;
 
-	$session = session_cache_get($bin);
+	if(isset($node->panels_node["panels_onepage"])) {
+		$sections = $node->panels_node["panels_onepage"];
+	}
+	else {
+		$session = session_cache_get($bin);
+		$sections = $session["sections"];
+	}
 
-	// A simple variable
-	$sections = $session["sections"];
-
-	if($session && $sections > 0) {
-		$form["_sections"] = array("#type" => "hidden", "#value" => $sections);
+	if($sections["total"] > 0) {
+		$form["_sections"] = array("#type" => "hidden", "#value" => $sections["total"]);
 
 		$form["_nid"] = array(
 			'#type' => "hidden",
@@ -24,11 +26,11 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 			$cols[$c] = $c;
 		}
 
-		// Cuantas secciones vamos a crear
-		for($i=1; $i <= $sections; $i++) {
+		// // Cuantas secciones vamos a crear
+		for($i=1; $i <= $sections["total"]; $i++) {
 			$form["container-" . $i] = array(
 				"#type" => "fieldset",
-				'#title' => "Columns for section " . $i,
+				'#title' => t("Settings for section !section", array("!section" => $i)),
 			);
 
 			$form["container-" . $i]["section-title-" . $i] = array(
@@ -36,7 +38,7 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 				'#title' => t("Section title"),
 				'#required' => TRUE,
 				"#description" => t("Used to set the menu title"),
-				"#default_value" => isset($panels_node["panels_onepage"]["sections"][$i]["section-title-" . $i])
+				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["title"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["title"] : NULL
 			);
 
 			$form["container-" . $i]["section-background-color-" . $i] = array(
@@ -44,7 +46,7 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 				'#title' => t("Section background color"),
 				'#required' => FALSE,
 				"#description" => t("Don't add the #"),
-				"#default_value" => isset($panels_node["panels_onepage"]["sections"][$i]["section-background-color-" . $i])
+				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["backgroundColor"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["backgroundColor"] : NULL
 			);			
 
 			$form["container-" . $i]["section-cols-" . $i] = array(
@@ -53,7 +55,7 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 				'#required' => TRUE,
 				'#description' => t("Select how many columns you need for this section"),
 				'#options' => $cols,
-				"#default_value" => isset($panels_node["panels_onepage"]["sections"][$i]["section-cols-" . $i])
+				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["cols"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["cols"] : NULL
 			);
 		}
 
@@ -62,7 +64,7 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 			"#value" => t("Next")
 		);
 	}
-
+	
 	return $form;
 }
 

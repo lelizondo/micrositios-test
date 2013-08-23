@@ -8,27 +8,30 @@ function _use_admin_theme() {
  * Implements hook_menu()
  */
 function panels_onepage_menu() {
-
-	// @todo move to custom file
 	$items["node/%node/customize/step/one"] = array(
-		'title' => 'Select sections',
+		'title' => 'Sections',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array("panels_onepage_customize_step_one", 1),
 		'access arguments' => array("create panel-nodes"),
 		'file' => 'includes/panels_onepage_customize_step_one.inc',
-		'type' => MENU_CALLBACK,
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 10,
 		'theme callback' => "_use_admin_theme"
 	);
 
 	$items["node/%node/customize/step/two"] = array(
-		'title' => 'Select columns',
+		'title' => 'Sections settings',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array("panels_onepage_customize_step_two", 1),
 		'access arguments' => array("create panel-nodes"),
 		'file' => 'includes/panels_onepage_customize_step_two.inc',
-		'type' => MENU_CALLBACK,
-		'theme callback' => "_use_admin_theme"
+		'type' => MENU_LOCAL_TASK,
+		'theme callback' => "_use_admin_theme",
+		'weight' => 11
 	);
+
+
+
 
 	// $items["node/%node/edit/panel-header"] = array(
 	// 	'title' => 'Header',
@@ -187,7 +190,6 @@ function theme_panels_onepage_panel_menu($variables) {
 	$url = request_path();
 
 	$node = $variables["node"];
-	$micrositios = $node->panel_node["panels_onepage"];
 
 	$titles = array();
 	foreach($node->panels_node["panels_onepage"]["sections"] as $key => $section) {
@@ -205,4 +207,47 @@ function theme_panels_onepage_panel_menu($variables) {
 function template_preprocess_node_tabs_as_menu(&$variables) {
 	$links = menu_local_tasks(0);
 	$variables["tabs"] = $links['tabs']['count'] > 1 ? $links["tabs"]["output"] : '';
+}
+
+function panels_onepage_preprocess_custom(&$variables) {
+	$variables["node"] = menu_get_object("node");
+	$variables["counter"] = 1;
+	$variables["sections"] = $variables["node"]->panels_node["panels_onepage"]["sections"];
+
+	foreach($variables["sections"] as $key => $section) {
+		$variables["sections"][$key]["style"] = _setStyles($section);
+		$variables["sections"][$key]["columns-class"] = _bootstrap_columns($section["cols"]);
+	}
+}
+
+
+function _bootstrap_columns($cols) {
+  $width = 12/$cols;
+  $arr = array(
+    "col-xs-" . $width,
+    "col-sm-" . $width,
+    "col-md-" . $width,
+    "col-lg-" . $width
+  );
+
+  return implode(" ", $arr);
+}
+
+/**
+ * Set inline styles
+ * Add background image too
+ */
+function _setStyles($section) {
+  // Default to white
+  $color = isset($section["backgroundColor"]) ? $section["backgroundColor"] : "#ffffff";
+
+  // Check if the user entered the color with # or without
+  if(strpos($color, "#") === false) {
+    $styles = "background-color: #" . $color;
+  }
+  else {
+    $styles = "background-color: " . $color;  
+  }
+
+  return $styles;
 }

@@ -21,7 +21,7 @@ function panels_onepage_customize_step_one($form, &$form_state, $node) {
 		'#required' => TRUE,
 		'#description' => t("Select how many sections you want to create"),
 		"#options" => $options,
-		"#default_value" => isset($panels_node["panels_onepage"]["sections"]) ? $panels_node["panels_onepage"]["sections"] ? NULL
+		"#default_value" => isset($node->panels_node["panels_onepage"]["total"]) ? $node->panels_node["panels_onepage"]["total"] : NULL
 	);
 
 	$form["submit"] = array(
