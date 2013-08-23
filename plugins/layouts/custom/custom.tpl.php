@@ -30,7 +30,6 @@
     return implode(" ", $arr);
   }
 
-
   /**
    * Set inline styles
    */
@@ -51,7 +50,7 @@
 ?>
 
 <div class="panel-container">
-  <?php foreach($node->panels_node["micrositios"]["sections"] as $key => $section): ?>
+  <?php foreach($node->panels_node["panels_onepage"]["sections"] as $key => $section): ?>
     <div id="container-outter-section-<?php print $key; ?>" class="container-outter container-outter-section-<?php print $key; ?>" style="<?php print setStyles($section); ?>">
       <div class="container section-container">
         <div id="<?php print 'section-' . $key; ?>" class="row">

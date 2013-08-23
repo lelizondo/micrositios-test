@@ -1,25 +1,25 @@
 <?php
 
-function micrositios_install() {
+function panels_onepage_install() {
 
 }
 
-function micrositios_update() {
+function panels_onepage_update() {
 
 }
 
-function micrositios_schema() {
-	$schema["panels_sections"] = array(
+function panels_onepage_schema() {
+	$schema["panels_onepage"] = array(
 		'fields' => array(
 			'nid' => array(
-				'description' => 'The current {node}.vid version identifier.',
+				'description' => 'The current nid version identifier.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
 			),
 			'data' => array(
-        'description' => 'A collection of data to cache.',
+        'description' => 'A collection of data to save.',
         'type' => 'blob',
         'not null' => FALSE,
         'size' => 'big',

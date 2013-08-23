@@ -2,14 +2,14 @@
 
 $plugin = array(
 	'title' => 'Custom',
-	'category' => t("Columns: 3"),
+	'category' => t("Builders"),
 	"icon" => 'custom.png',
 	'theme' => 'custom',
-	'css' => 'micrositios_custom_layout.css',
-	'regions function' => "_micrositios_panels_flexible_panels"
+	'css' => 'panels_onepage_custom_layout.css',
+	'regions function' => "_panels_onepage_panels_flexible_panels"
 );
 
-function _micrositios_panels_flexible_panels() {
+function _panels_onepage_panels_flexible_panels() {
 	// Hack, definir 100 regiones primero, despues se cortan a las que necesitamos
 	// No se porque pero necesitamos hacer esto aparentemente antes de cargar el nodo
 	// o no vienen definidas antes
@@ -22,7 +22,7 @@ function _micrositios_panels_flexible_panels() {
 	if(arg(0) == "node" && is_numeric(arg(1))) {
 		$node = node_load(arg(1));
 		$sum = array();
-		foreach($node->panels_node["micrositios"]["sections"] as $key => $col) {
+		foreach($node->panels_node["panels_onepage"]["sections"] as $key => $col) {
 			$sum[] = $col["cols"];
 		}
 

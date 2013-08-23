@@ -1,0 +1,208 @@
+<?php
+
+function _use_admin_theme() {
+	return variable_get("admin_theme", "seven");
+}
+
+/**
+ * Implements hook_menu()
+ */
+function panels_onepage_menu() {
+
+	// @todo move to custom file
+	$items["node/%node/customize/step/one"] = array(
+		'title' => 'Select sections',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array("panels_onepage_customize_step_one", 1),
+		'access arguments' => array("create panel-nodes"),
+		'file' => 'includes/panels_onepage_customize_step_one.inc',
+		'type' => MENU_CALLBACK,
+		'theme callback' => "_use_admin_theme"
+	);
+
+	$items["node/%node/customize/step/two"] = array(
+		'title' => 'Select columns',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array("panels_onepage_customize_step_two", 1),
+		'access arguments' => array("create panel-nodes"),
+		'file' => 'includes/panels_onepage_customize_step_two.inc',
+		'type' => MENU_CALLBACK,
+		'theme callback' => "_use_admin_theme"
+	);
+
+	// $items["node/%node/edit/panel-header"] = array(
+	// 	'title' => 'Header',
+	// 	'page callback' => 'drupal_get_form',
+	// 	'page arguments' => array("micrositios_panel_header"),
+	// 	'access callback' => TRUE,
+	// 	'access arguments' => array(1),
+	// 	'type' => MENU_LOCAL_TASK,
+	// 	'file' => "includes/panel_header.form.inc"
+	// );
+
+	return $items;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory()
+ */
+function panels_onepage_ctools_plugin_directory($owner, $plugin_type) {
+	if($owner == "panels" && $plugin_type == "layouts") {
+		return "plugins/$plugin_type";
+	}
+}
+
+/**
+ * Implements hook_form_alter()
+ */
+function panels_onepage_form_alter(&$form, &$form_state, $form_id) {
+	// $nid = node_load(arg(1));
+	// dsm($nid);
+}
+
+/**
+ * Implements hook_node_insert()
+ */
+function panels_onepage_node_insert($node) {
+	// redirect to the steps
+	$nid = $node->nid;
+	drupal_goto("node/$nid/customize/step/one");
+}
+
+
+/**
+ * Insert
+ */
+function panels_onepage_insert($nid, $data) {	
+	$insert = db_insert("panels_onepage")
+		->fields(array(
+			'nid' => $nid,
+			'data' => serialize($data)
+		))
+		->execute();
+
+	// Clear the session
+	global $user;
+	$bin = "user:" . $user->uid . ":node:" . $nid;
+	session_cache_set($bin, null);
+
+	return $insert;
+}
+
+
+/**
+ * Implements hook_node_load()
+ */
+function panels_onepage_node_load($nodes, $types) {
+	foreach($nodes as $node) {
+		$nids[] = $node->nid;
+	}
+
+	$result = db_select("panels_onepage", "s")
+		->fields("s")
+		->where("s.nid IN (:nids)", array(":nids" => $nids))
+		->execute();
+
+	foreach($result as $record) {
+		$nodes[$record->nid]->panels_node["panels_onepage"] = unserialize($record->data);
+	}
+}
+
+/**
+ * Implements hook_block_info()
+ */
+function panels_onepage_block_info() {
+	$blocks["panel-onepage-menu"] = array(
+		'info' => t("Panel One Page Menu"),
+		'cache' => DRUPAL_CACHE_PER_PAGE
+	);
+
+	$blocks["node-tabs-as-menu"] = array(
+		'info' => t("Node tabs as menu"),
+		'cache' => DRUPAL_CACHE_PER_PAGE
+	);
+
+	return $blocks;
+}
+
+/**
+ * Implements hook_block_view()
+ */
+function panels_onepage_block_view($delta = "") {
+	$block = array();
+
+	switch($delta) {
+		case "panel-one-page-menu":
+			$node = menu_get_object("node");
+			if(isset($node)) {
+				$block["subject"] = NULL;
+				$block["content"] = array(
+					"#theme" => "panels_onepage_panel_menu",
+					"#node" => $node,
+				);
+			}
+		break;
+
+		case "node-tabs-as-menu":
+			$node = menu_get_object("node");
+			if(isset($node)) {
+				$block["subject"] = NULL;
+				$block["content"] = array(
+					'#theme' => 'node_tabs_as_menu',
+					'#node' => $node
+				);
+			}
+		break;
+	}
+
+	return $block;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function panels_onepage_theme() {
+	return array(
+		"panels_onepage_panel_menu" => array(
+			'variables' => array(
+				'node' => NULL
+			)
+		),
+		"node_tabs_as_menu" => array(
+			'variables' => array(
+				'node' => NULL,
+				'menu_title' => t("Actions"),
+				'attributes' => NULL
+			),
+			'template' => "node-tabs-as-menu"
+		)
+	);
+}
+
+/**
+ * Displays the menu
+ */
+function theme_panels_onepage_panel_menu($variables) {
+	global $base_url;
+	$url = request_path();
+
+	$node = $variables["node"];
+	$micrositios = $node->panel_node["panels_onepage"];
+
+	$titles = array();
+	foreach($node->panels_node["panels_onepage"]["sections"] as $key => $section) {
+		$titles[] = array(
+			"title" => $section["title"],
+			"href" => $url,
+			"fragment" => "container-outter-section-" . $key
+		);
+	}
+
+	// @todo This is temporary
+	return theme("links", array("links" => $titles, "attributes" => array("class" => "nav nav-pills")));
+}
+
+function template_preprocess_node_tabs_as_menu(&$variables) {
+	$links = menu_local_tasks(0);
+	$variables["tabs"] = $links['tabs']['count'] > 1 ? $links["tabs"]["output"] : '';
+}

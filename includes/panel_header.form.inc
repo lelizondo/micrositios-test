@@ -4,7 +4,7 @@
 /**
  * Panel Header form
  */
-function micrositios_panel_header($form, &$form_state) {
+function panels_onepage_page_header($form, &$form_state) {
 	$form = array();
 
 	$form["image"] = array(
@@ -23,7 +23,7 @@ function micrositios_panel_header($form, &$form_state) {
 	return $form;
 }
 
-function micrositios_panel_header_submit($form, &$form_submit) {
+function panels_onepage_page_header_submit($form, &$form_submit) {
 	$form["image"]["#file"]->status = FILE_STATUS_PERMANENT;
 	$file = file_save($form["image"]["#file"]);
 
