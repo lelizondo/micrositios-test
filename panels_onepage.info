@@ -1,7 +1,6 @@
 name = Panels One Page
 core = 7.x
 dependencies[] = panels
-dependencies[] = session_cache
 
 files[] = panels_onepage.module
 files[] = includes/panels_onepage_customize_step_two.inc

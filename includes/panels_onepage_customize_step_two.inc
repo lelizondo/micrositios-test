@@ -2,17 +2,10 @@
 
 function panels_onepage_customize_step_two($form, &$form_state, $node) {
 	global $user;
-	$bin = "user:" . $user->uid . ":node:" . $node->nid;
-
-	dsm($node);
 
 	if(isset($node->panels_node["panels_onepage"])) {
 		$sections = $node->panels_node["panels_onepage"];
 	}
-	// else {
-	// 	$session = session_cache_get($bin);
-	// 	$sections = $session["sections"];
-	// }
 
 	if($sections["total"] > 0) {
 		$form["_sections"] = array("#type" => "hidden", "#value" => $sections["total"]);
@@ -93,10 +86,6 @@ function panels_onepage_customize_step_two_submit(&$form, &$form_state) {
 	panels_onepage_save($nid, $ret);
 
 	$node = node_load($nid);
-	
-	// clear the session
-	$bin = "user:" . $user->uid . ":node:" . $nid;
-	session_cache_set($bin, null);
 
 	if($node->panels_node["pipeline"] == "ipe") {
 		$form_state["redirect"] = "node/$nid";

@@ -72,11 +72,6 @@ function panels_onepage_save($nid, $data) {
 		))
 		->execute();
 
-	// Clear the session
-	global $user;
-	$bin = "user:" . $user->uid . ":node:" . $nid;
-	session_cache_set($bin, null);
-
 	return $insert;
 }
 
