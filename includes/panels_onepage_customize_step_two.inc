@@ -4,13 +4,15 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 	global $user;
 	$bin = "user:" . $user->uid . ":node:" . $node->nid;
 
+	dsm($node);
+
 	if(isset($node->panels_node["panels_onepage"])) {
 		$sections = $node->panels_node["panels_onepage"];
 	}
-	else {
-		$session = session_cache_get($bin);
-		$sections = $session["sections"];
-	}
+	// else {
+	// 	$session = session_cache_get($bin);
+	// 	$sections = $session["sections"];
+	// }
 
 	if($sections["total"] > 0) {
 		$form["_sections"] = array("#type" => "hidden", "#value" => $sections["total"]);
@@ -33,12 +35,12 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 				'#title' => t("Settings for section !section", array("!section" => $i)),
 			);
 
-			$form["container-" . $i]["section-title-" . $i] = array(
+			$form["container-" . $i]["menu-title-" . $i] = array(
 				'#type' => 'textfield',
-				'#title' => t("Section title"),
-				'#required' => TRUE,
+				'#title' => t("Menu title"),
+				'#required' => FALSE,
 				"#description" => t("Used to set the menu title"),
-				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["title"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["title"] : NULL
+				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["menu_title"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["menu_title"] : NULL
 			);
 
 			$form["container-" . $i]["section-background-color-" . $i] = array(
@@ -69,6 +71,7 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 }
 
 function panels_onepage_customize_step_two_submit(&$form, &$form_state) {
+	global $user;
 
 	$values = $form_state["values"];
 	$sections = $values["_sections"];
@@ -81,14 +84,24 @@ function panels_onepage_customize_step_two_submit(&$form, &$form_state) {
 	for($i = 1; $i <= $sections; $i++) {
 		$ret["sections"][$i] = array(
 			'cols' => $values["section-cols-" . $i],
-			'title' => $values["section-title-" . $i],
-			'backgroundColor' => $values["section-background-color-" . $i]
+			'menu_title' => check_plain($values["menu-title-" . $i]),
+			'backgroundColor' => check_plain($values["section-background-color-" . $i])
 		);
 	}
 
 	// save here
-	panels_onepage_insert($nid, $ret);
+	panels_onepage_save($nid, $ret);
 
-	// clear the session finally
-	$form_state["redirect"] = "node/$nid/panel_content";
+	$node = node_load($nid);
+	
+	// clear the session
+	$bin = "user:" . $user->uid . ":node:" . $nid;
+	session_cache_set($bin, null);
+
+	if($node->panels_node["pipeline"] == "ipe") {
+		$form_state["redirect"] = "node/$nid";
+	}
+	else {
+		$form_state["redirect"] = "node/$nid/panel_content";
+	}
 }

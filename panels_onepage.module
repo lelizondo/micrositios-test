@@ -30,19 +30,6 @@ function panels_onepage_menu() {
 		'weight' => 11
 	);
 
-
-
-
-	// $items["node/%node/edit/panel-header"] = array(
-	// 	'title' => 'Header',
-	// 	'page callback' => 'drupal_get_form',
-	// 	'page arguments' => array("micrositios_panel_header"),
-	// 	'access callback' => TRUE,
-	// 	'access arguments' => array(1),
-	// 	'type' => MENU_LOCAL_TASK,
-	// 	'file' => "includes/panel_header.form.inc"
-	// );
-
 	return $items;
 }
 
@@ -76,8 +63,9 @@ function panels_onepage_node_insert($node) {
 /**
  * Insert
  */
-function panels_onepage_insert($nid, $data) {	
-	$insert = db_insert("panels_onepage")
+function panels_onepage_save($nid, $data) {	
+	$insert = db_merge("panels_onepage")
+		->key(array("nid" => $nid))
 		->fields(array(
 			'nid' => $nid,
 			'data' => serialize($data)
@@ -111,17 +99,28 @@ function panels_onepage_node_load($nodes, $types) {
 	}
 }
 
+
+/**
+ * Get a row
+ */
+function panels_onepage_get($nid) {
+	$results = db_select("panels_onepage", "s")
+		->fields("s")
+		->condition("nid", $nid, "=")
+		->execute()
+		->fetchAssoc();
+
+	return $results;
+}
+
 /**
  * Implements hook_block_info()
  */
 function panels_onepage_block_info() {
+	$blocks = array();
+
 	$blocks["panel-onepage-menu"] = array(
 		'info' => t("Panel One Page Menu"),
-		'cache' => DRUPAL_CACHE_PER_PAGE
-	);
-
-	$blocks["node-tabs-as-menu"] = array(
-		'info' => t("Node tabs as menu"),
 		'cache' => DRUPAL_CACHE_PER_PAGE
 	);
 
@@ -135,24 +134,13 @@ function panels_onepage_block_view($delta = "") {
 	$block = array();
 
 	switch($delta) {
-		case "panel-one-page-menu":
+		case "panel-onepage-menu":
 			$node = menu_get_object("node");
 			if(isset($node)) {
 				$block["subject"] = NULL;
 				$block["content"] = array(
 					"#theme" => "panels_onepage_panel_menu",
 					"#node" => $node,
-				);
-			}
-		break;
-
-		case "node-tabs-as-menu":
-			$node = menu_get_object("node");
-			if(isset($node)) {
-				$block["subject"] = NULL;
-				$block["content"] = array(
-					'#theme' => 'node_tabs_as_menu',
-					'#node' => $node
 				);
 			}
 		break;
@@ -171,14 +159,6 @@ function panels_onepage_theme() {
 				'node' => NULL
 			)
 		),
-		"node_tabs_as_menu" => array(
-			'variables' => array(
-				'node' => NULL,
-				'menu_title' => t("Actions"),
-				'attributes' => NULL
-			),
-			'template' => "node-tabs-as-menu"
-		)
 	);
 }
 
@@ -193,22 +173,22 @@ function theme_panels_onepage_panel_menu($variables) {
 
 	$titles = array();
 	foreach($node->panels_node["panels_onepage"]["sections"] as $key => $section) {
-		$titles[] = array(
-			"title" => $section["title"],
-			"href" => $url,
-			"fragment" => "container-outter-section-" . $key
-		);
+		if(!empty($section["menu_title"])) {
+			$titles[] = array(
+				"title" => $section["menu_title"],
+				"href" => $url,
+				"fragment" => "container-outter-section-" . $key
+			);
+		}
 	}
 
 	// @todo This is temporary
-	return theme("links", array("links" => $titles, "attributes" => array("class" => "nav nav-pills")));
+	return '<div class="menu-panel">' . theme("links", array("links" => $titles, "attributes" => array("class" => "nav nav-pills"))). '</div>';
 }
 
-function template_preprocess_node_tabs_as_menu(&$variables) {
-	$links = menu_local_tasks(0);
-	$variables["tabs"] = $links['tabs']['count'] > 1 ? $links["tabs"]["output"] : '';
-}
-
+/**
+ * Preprocess function for custom.tpl.php
+ */
 function panels_onepage_preprocess_custom(&$variables) {
 	$variables["node"] = menu_get_object("node");
 	$variables["counter"] = 1;
@@ -221,6 +201,9 @@ function panels_onepage_preprocess_custom(&$variables) {
 }
 
 
+/**
+ * Convert an amount of columns into bootstrap3 columns classes
+ */
 function _bootstrap_columns($cols) {
   $width = 12/$cols;
   $arr = array(

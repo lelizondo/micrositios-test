@@ -38,12 +38,20 @@ function panels_onepage_customize_step_one_submit($form, &$form_state) {
 
 	global $user;
 
-	$bin = "user:" . $user->uid . ":node:" . $nid;
-	$data = array(
-		"sections" => $values["sections"]
-	);
+	$section = panels_onepage_get($nid);
+	if($section) {
+		$data = unserialize($section["data"]);
+		$data["total"] = $values["sections"];
 
-	session_cache_set($bin, $data);
+		panels_onepage_save($nid, $data);
+	}
+	else {
+		$data = array(
+			"total" => $values["sections"],
+		);
+		
+		panels_onepage_save($nid, $data);
+	}
 
 	// redirect to the following step
 	$form_state["redirect"] = "node/". $nid ."/customize/step/two";
