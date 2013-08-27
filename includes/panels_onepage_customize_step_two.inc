@@ -52,6 +52,23 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 				'#options' => $cols,
 				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["cols"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["cols"] : NULL
 			);
+
+			$form["container-" . $i]["section-height-" . $i] = array(
+				'#type' => 'textfield',
+				'#title' => t("Section minimum height"),
+				'#required' => FALSE,
+				"#description" => t("add px or em"),
+				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["height"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["height"] : NULL
+			);	
+
+			$form["container-" . $i]["section-image-" . $i] = array(
+				'#type' => 'managed_file',
+				'#title' => t("Background image"),
+				'#required' => FALSE,
+				'#description' => t("If you want to display a background image, you can upload it here"),
+				'#upload_location' => 'public://panels_onepage/',
+				'#default_value' => isset($node->panels_node["panels_onepage"]["sections"][$i]["backgroundImage"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["backgroundImage"] : NULL
+			);
 		}
 
 		$form["submit"] = array(
@@ -78,8 +95,17 @@ function panels_onepage_customize_step_two_submit(&$form, &$form_state) {
 		$ret["sections"][$i] = array(
 			'cols' => $values["section-cols-" . $i],
 			'menu_title' => check_plain($values["menu-title-" . $i]),
-			'backgroundColor' => check_plain($values["section-background-color-" . $i])
+			'height' => check_plain($values["section-height-" . $i]),
+			'backgroundColor' => check_plain($values["section-background-color-" . $i]),
 		);
+		
+		$file = file_load($values["section-image-" . $i]);
+		if($file) {
+			$file->status = FILE_STATUS_PERMANENT;
+			file_save($file);
+			file_usage_add($file, "panels_onepage", "node", $nid);
+			$ret["sections"][$i]["backgroundImage"] = $file->fid;
+		}
 	}
 
 	// save here

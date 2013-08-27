@@ -14,10 +14,13 @@
  *   - $content['right']: Content in the right column.
  */ 
 ?>
-
 <div class="panel-container">
   <?php foreach($sections as $key => $section): ?>
+  <?php if(isset($section["backgroundImage"])): ?>
+    <div id="container-outter-section-<?php print $key; ?>" class="stretchMe container-outter container-outter-section-<?php print $key; ?>" style="<?php print $section["style"]; ?>" data-stretch="<?php print $section["backgroundImage"]; ?>">
+  <?php else: ?>
     <div id="container-outter-section-<?php print $key; ?>" class="container-outter container-outter-section-<?php print $key; ?>" style="<?php print $section["style"]; ?>">
+  <?php endif; ?>
       <div class="container section-container">
         <div id="<?php print 'section-' . $key; ?>" class="row">
           <?php $cols = $section["cols"]; ?>

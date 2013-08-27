@@ -185,6 +185,16 @@ function theme_panels_onepage_panel_menu($variables) {
  * Preprocess function for custom.tpl.php
  */
 function panels_onepage_preprocess_custom(&$variables) {
+
+	$path = drupal_get_path("module", "panels_onepage");
+	drupal_add_js($path . "/js/jquery.anystretch.js", "file");
+
+	// Parallax effect / One page scroll
+	drupal_add_js($path . "/js/jquery.scrollTo.js", "file");
+	drupal_add_js($path . "/js/jquery.nav.js", "file");
+
+	drupal_add_js($path . "/js/panels_onepage.js", "file");
+
 	$variables["node"] = menu_get_object("node");
 	$variables["counter"] = 1;
 	$variables["sections"] = $variables["node"]->panels_node["panels_onepage"]["sections"];
@@ -192,9 +202,13 @@ function panels_onepage_preprocess_custom(&$variables) {
 	foreach($variables["sections"] as $key => $section) {
 		$variables["sections"][$key]["style"] = _setStyles($section);
 		$variables["sections"][$key]["columns-class"] = _bootstrap_columns($section["cols"]);
+
+		if(isset($section["backgroundImage"])) {
+			$file = file_load($section["backgroundImage"]);
+			$variables["sections"][$key]["backgroundImage"] = file_create_url($file->uri);
+		}
 	}
 }
-
 
 /**
  * Convert an amount of columns into bootstrap3 columns classes
@@ -217,14 +231,18 @@ function _bootstrap_columns($cols) {
  */
 function _setStyles($section) {
   // Default to white
-  $color = isset($section["backgroundColor"]) ? $section["backgroundColor"] : "#ffffff";
+  $color = !empty($section["backgroundColor"]) ? $section["backgroundColor"] : "none";
 
   // Check if the user entered the color with # or without
   if(strpos($color, "#") === false) {
-    $styles = "background-color: #" . $color;
+    $styles = "background-color: #" . $color . ";";
   }
   else {
-    $styles = "background-color: " . $color;  
+    $styles = "background-color: " . $color . ";";  
+  }
+
+  if(!empty($section["height"])) {
+  	$styles .= "min-height: " . $section["height"] . ";";
   }
 
   return $styles;
