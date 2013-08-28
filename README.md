@@ -1,4 +1,4 @@
 README
 ================
 
-Módulo para Drupal 7 experimental para realizar sitio de una sola página con Panels, JS y Drupal
+Drupal 7 module to create with Panels pages that have their own navigation and divide the page with sections and columns using Twitter Bootstrap. Tested with Panopoly.
