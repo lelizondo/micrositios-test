@@ -3,8 +3,8 @@
 function panels_onepage_customize_step_two($form, &$form_state, $node) {
 	global $user;
 
-	if(isset($node->panels_node["panels_onepage"])) {
-		$sections = $node->panels_node["panels_onepage"];
+	if(isset($node->panels_onepage)) {
+		$sections = $node->panels_onepage;
 	}
 
 	if($sections["total"] > 0) {
@@ -23,55 +23,65 @@ function panels_onepage_customize_step_two($form, &$form_state, $node) {
 
 		// // Cuantas secciones vamos a crear
 		for($i=1; $i <= $sections["total"]; $i++) {
-			$form["container-" . $i] = array(
+			$form["well-" . $i] = array(
+				'#prefix' => '<div class="panels-onepage-step-two-well well">',
+				'#suffix' => '</div>'
+			);
+
+			$form["well-" . $i]["container-" . $i] = array(
 				"#type" => "fieldset",
 				'#title' => t("Settings for section !section", array("!section" => $i)),
 			);
 
-			$form["container-" . $i]["menu-title-" . $i] = array(
+			$form["well-" . $i]["container-" . $i]["menu-title-" . $i] = array(
 				'#type' => 'textfield',
 				'#title' => t("Menu title"),
 				'#required' => FALSE,
 				"#description" => t("Used to set the menu title"),
-				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["menu_title"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["menu_title"] : NULL
+				"#default_value" => isset($node->panels_onepage["sections"][$i]["menu_title"]) ? $node->panels_onepage["sections"][$i]["menu_title"] : NULL
 			);
 
-			$form["container-" . $i]["section-background-color-" . $i] = array(
+			$form["well-" . $i]["container-" . $i]["section-background-color-" . $i] = array(
 				'#type' => 'textfield',
 				'#title' => t("Section background color"),
 				'#required' => FALSE,
 				"#description" => t("Don't add the #"),
-				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["backgroundColor"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["backgroundColor"] : NULL
+				"#default_value" => isset($node->panels_onepage["sections"][$i]["backgroundColor"]) ? $node->panels_onepage["sections"][$i]["backgroundColor"] : NULL
 			);			
 
-			$form["container-" . $i]["section-cols-" . $i] = array(
+			$form["well-" . $i]["container-" . $i]["section-cols-" . $i] = array(
 				'#type' => 'select',
 				'#title' => t("How many columns you need in this section?"),
 				'#required' => TRUE,
 				'#description' => t("Select how many columns you need for this section"),
 				'#options' => $cols,
-				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["cols"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["cols"] : NULL
+				"#default_value" => isset($node->panels_onepage["sections"][$i]["cols"]) ? $node->panels_onepage["sections"][$i]["cols"] : NULL
 			);
 
-			$form["container-" . $i]["section-height-" . $i] = array(
+			$form["well-" . $i]["container-" . $i]["section-height-" . $i] = array(
 				'#type' => 'textfield',
 				'#title' => t("Section minimum height"),
 				'#required' => FALSE,
 				"#description" => t("add px or em"),
-				"#default_value" => isset($node->panels_node["panels_onepage"]["sections"][$i]["height"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["height"] : NULL
+				"#default_value" => isset($node->panels_onepage["sections"][$i]["height"]) ? $node->panels_onepage["sections"][$i]["height"] : NULL
 			);	
 
-			$form["container-" . $i]["section-image-" . $i] = array(
+			$form["well-" . $i]["container-" . $i]["section-image-" . $i] = array(
 				'#type' => 'managed_file',
 				'#title' => t("Background image"),
 				'#required' => FALSE,
 				'#description' => t("If you want to display a background image, you can upload it here"),
 				'#upload_location' => 'public://panels_onepage/',
-				'#default_value' => isset($node->panels_node["panels_onepage"]["sections"][$i]["backgroundImage"]) ? $node->panels_node["panels_onepage"]["sections"][$i]["backgroundImage"] : NULL
+				'#default_value' => isset($node->panels_onepage["sections"][$i]["backgroundImage"]) ? $node->panels_onepage["sections"][$i]["backgroundImage"] : NULL
 			);
 		}
 
-		$form["submit"] = array(
+		$form["actions"] = array(
+			'#prefix' => '<div class="actions">',
+			'#suffix' => '</div>'
+		);
+
+		$form["actions"]["submit"] = array(
 			"#type" => "submit",
 			"#value" => t("Next")
 		);
@@ -112,11 +122,12 @@ function panels_onepage_customize_step_two_submit(&$form, &$form_state) {
 	panels_onepage_save($nid, $ret);
 
 	$node = node_load($nid);
-
-	if($node->panels_node["pipeline"] == "ipe") {
-		$form_state["redirect"] = "node/$nid";
-	}
-	else {
-		$form_state["redirect"] = "node/$nid/panel_content";
+	if(isset($node->panelizer)) {
+		if($node->panelizer["page_manager"]->pipeline == "ipe") {
+			$form_state["redirect"] = "node/$nid";
+		}
+		else {
+			$form_state["redirect"] = "node/$nid/panelizer/page_manager/content";
+		}
 	}
 }

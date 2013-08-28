@@ -21,15 +21,19 @@ function _panels_onepage_panels_flexible_panels() {
 		
 	if(arg(0) == "node" && is_numeric(arg(1))) {
 		$node = node_load(arg(1));
-		$sum = array();
-		foreach($node->panels_node["panels_onepage"]["sections"] as $key => $col) {
-			$sum[] = $col["cols"];
-		}
 
-		$totalDeColumnas = array_sum($sum);
+		// @todo check if is enabled?
+		if(isset($node->panelizer)) {
+			$sum = array();
+			foreach($node->panels_onepage["sections"] as $key => $col) {
+				$sum[] = $col["cols"];
+			}
 
-		for($i = 0; $i <= $totalDeColumnas; $i++) {
-			$regions["col-$i"] = "col-" . $i;
+			$totalDeColumnas = array_sum($sum);
+
+			for($i = 0; $i <= $totalDeColumnas; $i++) {
+				$regions["col-$i"] = "col-" . $i;
+			}
 		}
 	}
 	

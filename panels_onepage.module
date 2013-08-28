@@ -12,10 +12,11 @@ function panels_onepage_menu() {
 		'title' => 'Sections',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array("panels_onepage_customize_step_one", 1),
-		'access arguments' => array("create panel-nodes"),
+		'access callback' => "panels_onepage_check_access",
+		'access arguments' => array(1),
 		'file' => 'includes/panels_onepage_customize_step_one.inc',
 		'type' => MENU_LOCAL_TASK,
-		'weight' => 10,
+		'weight' => 11,
 		'theme callback' => "_use_admin_theme"
 	);
 
@@ -23,14 +24,29 @@ function panels_onepage_menu() {
 		'title' => 'Sections settings',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array("panels_onepage_customize_step_two", 1),
-		'access arguments' => array("create panel-nodes"),
+		'access callback' => "panels_onepage_check_access",
+		'access arguments' => array(1),
 		'file' => 'includes/panels_onepage_customize_step_two.inc',
 		'type' => MENU_LOCAL_TASK,
+		'weight' => 12,
 		'theme callback' => "_use_admin_theme",
-		'weight' => 11
 	);
 
 	return $items;
+}
+
+
+/**
+ * Access callback to only allow the module to work with
+ * node types working with panelizer
+ */
+function panels_onepage_check_access($node) {
+	if(isset($node->panelizer)) {
+		return user_access("create panel-nodes");
+	}
+	else {
+		return FALSE;
+	}
 }
 
 /**
@@ -56,7 +72,9 @@ function panels_onepage_form_alter(&$form, &$form_state, $form_id) {
 function panels_onepage_node_insert($node) {
 	// redirect to the steps
 	$nid = $node->nid;
-	drupal_goto("node/$nid/customize/step/one");
+	if(isset($node->panelizer)) {
+		drupal_goto("node/$nid/customize/step/one");
+	}
 }
 
 
@@ -90,7 +108,7 @@ function panels_onepage_node_load($nodes, $types) {
 		->execute();
 
 	foreach($result as $record) {
-		$nodes[$record->nid]->panels_node["panels_onepage"] = unserialize($record->data);
+		$nodes[$record->nid]->panels_onepage = unserialize($record->data);
 	}
 }
 
@@ -167,7 +185,7 @@ function theme_panels_onepage_panel_menu($variables) {
 	$node = $variables["node"];
 
 	$titles = array();
-	foreach($node->panels_node["panels_onepage"]["sections"] as $key => $section) {
+	foreach($node->panels_onepage["sections"] as $key => $section) {
 		if(!empty($section["menu_title"])) {
 			$titles[] = array(
 				"title" => $section["menu_title"],
@@ -178,7 +196,7 @@ function theme_panels_onepage_panel_menu($variables) {
 	}
 
 	// @todo This is temporary
-	return '<div class="menu-panel">' . theme("links", array("links" => $titles, "attributes" => array("class" => "nav nav-pills"))). '</div>';
+	return '<div class="menu-panel">' . theme("links", array("links" => $titles, "attributes" => array("class" => "nav-menu-panel nav nav-pills"))). '</div>';
 }
 
 /**
@@ -197,15 +215,18 @@ function panels_onepage_preprocess_custom(&$variables) {
 
 	$variables["node"] = menu_get_object("node");
 	$variables["counter"] = 1;
-	$variables["sections"] = $variables["node"]->panels_node["panels_onepage"]["sections"];
 
-	foreach($variables["sections"] as $key => $section) {
-		$variables["sections"][$key]["style"] = _setStyles($section);
-		$variables["sections"][$key]["columns-class"] = _bootstrap_columns($section["cols"]);
+	if($variables["node"]->panels_onepage["sections"] > 0) {
+		$variables["sections"] = $variables["node"]->panels_onepage["sections"];
 
-		if(isset($section["backgroundImage"])) {
-			$file = file_load($section["backgroundImage"]);
-			$variables["sections"][$key]["backgroundImage"] = file_create_url($file->uri);
+		foreach($variables["sections"] as $key => $section) {
+			$variables["sections"][$key]["style"] = _setStyles($section);
+			$variables["sections"][$key]["columns-class"] = _bootstrap_columns($section["cols"]);
+
+			if(isset($section["backgroundImage"])) {
+				$file = file_load($section["backgroundImage"]);
+				$variables["sections"][$key]["backgroundImage"] = file_create_url($file->uri);
+			}
 		}
 	}
 }

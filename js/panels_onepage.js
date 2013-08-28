@@ -3,7 +3,7 @@
 		attach: function(context, settings) {
 			$(".stretchMe").anystretch();	
 
-			$('.nav').onePageNav();
+			$('.nav-menu-panel').onePageNav();
 		}
 	}
 })(jQuery);

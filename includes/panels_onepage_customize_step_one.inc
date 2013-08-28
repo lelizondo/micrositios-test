@@ -21,10 +21,15 @@ function panels_onepage_customize_step_one($form, &$form_state, $node) {
 		'#required' => TRUE,
 		'#description' => t("Select how many sections you want to create"),
 		"#options" => $options,
-		"#default_value" => isset($node->panels_node["panels_onepage"]["total"]) ? $node->panels_node["panels_onepage"]["total"] : NULL
+		"#default_value" => isset($node->panels_onepage["total"]) ? $node->panels_onepage["total"] : NULL
 	);
 
-	$form["submit"] = array(
+	$form["actions"] = array(
+		'#prefix' => '<div class="actions">',
+		'#suffix' => '</div>'
+	);
+
+	$form["actions"]["submit"] = array(
 		"#type" => 'submit',
 		"#value" => t("Next")
 	);
